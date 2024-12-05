@@ -62,12 +62,19 @@ extern jmp_buf sched_buf;
 // You should setup your own sleeping set as well as finish the marcos below
 #define thread_create(func, t_id, t_args)                                              \
     ({                                                                                 \
+        func(t_id, t_args);                                                            \
     })
 
 #define thread_setup(t_id, t_args)                                                     \
-    ({                                                                                 \
+    ({ \
+        if (t_id == 0) break;                                        \
+        current_thread->id = t_id;                                   \
+        current_thread->args = t_args;                               \
+        int arr_idx = (ready_queue->head + ready_queue->size) % THREAD_MAX; \
+        ready_queue->arr[arr_idx] = current_thread;                  \
+        printf("thread [%d]: set up routine [%s]", current_thread->id, __func__);\
     })
-
+        
 #define thread_yield()                                  \
     ({                                                  \
     })
