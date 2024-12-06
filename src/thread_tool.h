@@ -79,7 +79,8 @@ extern jmp_buf sched_buf;
         new_tcb->id = t_id;                             \
         new_tcb->args = t_args;                         \
                                                         \
-        int jmpVal = setjmp(current_thread->env);       \
+        int jmpVal = setjmp(new_tcb->env);       \
+                                                        \
         if (t_id == 0) {                                \
             idle_thread = new_tcb;                      \
             return;                                     \
