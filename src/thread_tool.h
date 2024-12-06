@@ -90,10 +90,11 @@ extern jmp_buf sched_buf;
         }                                               \
     })
 
+#define jmpFromYield 1
 
 #define thread_yield()                                              \
     ({                                                              \
-        int jmpVal = sigsetjmp(current_thread->env, 1);                                \
+        int jmpVal = sigsetjmp(current_thread->env, 1);             \
         sigset_t sigset;                                            \
         sigset_t oldset;                                            \
                                                                     \
@@ -117,7 +118,7 @@ extern jmp_buf sched_buf;
         sigprocmask(SIG_BLOCK, &sigset, NULL);                      \
                                                                     \
         /*Relinquishes control to the scheduler*/                   \
-        siglongjmp(sched_buf, 1);                                   \
+        siglongjmp(sched_buf, jmpFromYield);                        \
     })
 
 
@@ -130,7 +131,7 @@ extern jmp_buf sched_buf;
             thread_yield();                                         \
             }                                                       \
             else{                                                   \
-                rwlock.read_count +== 1;                            \
+                rwlock.read_count += 1;                            \
                 break;                                              \
             }                                                       \
         }                                                           \
@@ -145,7 +146,7 @@ extern jmp_buf sched_buf;
             thread_yield();                                         \
             }                                                       \
             else{                                                   \
-                rwlock.write_count +== 1;                           \
+                rwlock.write_count += 1;                           \
                 break;                                              \
             }                                                       \
         }                                                           \                                                        
