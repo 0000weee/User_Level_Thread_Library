@@ -90,9 +90,31 @@ extern jmp_buf sched_buf;
     })
 
 
-#define thread_yield()                                  \
-    ({                                                  \
+#define thread_yield()                                              \
+    ({                                                              \
+        sigset_t sigset;                                            \
+        sigset_t oldset;                                            \
+                                                                    \
+        /* Initialize signal set */                                 \
+        sigemptyset(&sigset);                                       \
+        sigaddset(&sigset, SIGTSTP);                                \
+        sigaddset(&sigset, SIGALRM);                                \
+                                                                    \
+        /* Unblock SIGTSTP */                                       \
+        sigprocmask(SIG_UNBLOCK, &sigset, &oldset);                 \
+                                                                    \
+        /* Block SIGTSTP  */                     \
+        sigprocmask(SIG_BLOCK, &sigset, NULL);                      \
+                                                                    \
+        /* Unblock SIGALRM */                                       \
+        sigdelset(&sigset, SIGTSTP);                                \
+        sigprocmask(SIG_UNBLOCK, &sigset, NULL);                    \
+                                                                    \
+        /* Block SIGALRM */                \
+        sigaddset(&sigset, SIGALRM);                                \
+        sigprocmask(SIG_BLOCK, &sigset, NULL);                      \
     })
+
 
 #define read_lock()                                                      \
     ({                                                                   \
