@@ -92,7 +92,7 @@ extern jmp_buf sched_buf;
 
 #define thread_yield()                                              \
     ({                                                              \
-        setjmp(current_thread->env);                                \
+        int jmpVal = sigsetjmp(current_thread->env, 1);                                \
         sigset_t sigset;                                            \
         sigset_t oldset;                                            \
                                                                     \
@@ -117,20 +117,44 @@ extern jmp_buf sched_buf;
     })
 
 
-#define read_lock()                                                      \
-    ({                                                                   \
+#define read_lock()                                                 \
+    ({                                                              \
+        setjmp(current_thread->env);                                \
+        while(1){                                                   \
+            if (rwlock.write_count > 0){                            \
+            queue_add(waiting_queue, current_thread);               \
+            thread_yield();                                         \
+            }                                                       \
+            else{                                                   \
+                rwlock.read_count +== 1;                            \
+                break;                                              \
+            }                                                       \
+        }                                                           \
+    })                                                              
+
+#define write_lock()                                                \
+    ({                                                              \
+        setjmp(current_thread->env);                                \
+        while(1){                                                   \
+            if (rwlock.write_count > 0 || rwlock.read_count > 0){   \                        \
+            queue_add(waiting_queue, current_thread);               \
+            thread_yield();                                         \
+            }                                                       \
+            else{                                                   \
+                rwlock.write_count +== 1;                           \
+                break;                                              \
+            }                                                       \
+        }                                                           \                                                        
     })
 
-#define write_lock()                                                     \
-    ({                                                                   \
+#define read_unlock()                                               \
+    ({                                                              \
+        rwlock.read_count -= 1;                                     \
     })
 
-#define read_unlock()                                                                 \
-    ({                                                                                \
-    })
-
-#define write_unlock()                                                                \
-    ({                                                                                \
+#define write_unlock()                                              \
+    ({                                                              \
+        rwlock.write_count -= 1;                                    \
     })
 
 #define thread_sleep(sec)                                            \
