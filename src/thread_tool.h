@@ -92,6 +92,7 @@ extern jmp_buf sched_buf;
 
 #define thread_yield()                                              \
     ({                                                              \
+        setjmp(current_thread->env);                                \
         sigset_t sigset;                                            \
         sigset_t oldset;                                            \
                                                                     \
