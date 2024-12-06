@@ -73,19 +73,19 @@ extern jmp_buf sched_buf;
         func(t_id, t_args);                                                            \
     })
 
-#define thread_setup(t_id, t_args)                       \
+#define thread_setup(t_id, t_args)                      \
     ({                                                  \
         struct tcb* new_tcb = (struct tcb*) calloc(1, sizeof(struct tcb)); \
-        new_tcb->id = t_id;                            \
-        new_tcb->args = t_args;                        \
-        \
-        int jmpVal = setjmp(current_thread->env);        \
+        new_tcb->id = t_id;                             \
+        new_tcb->args = t_args;                         \
+                                                        \
+        int jmpVal = setjmp(current_thread->env);       \
         if (t_id == 0) {                                \
-            idle_thread = new_tcb;\
-            return;\
+            idle_thread = new_tcb;                      \
+            return;                                     \
         } else {                                        \
-            queue_add(ready_queue, new_tcb);     \
-            return;\
+            queue_add(ready_queue, new_tcb);            \
+            return;                                     \
         }                                               \
     })
 
