@@ -58,6 +58,14 @@ extern int time_slice;
 // The long jump buffer for the scheduler.
 extern jmp_buf sched_buf;
 
+#define queue_add(queue, thread)                         \
+    ({                                                  \
+        int idx = (queue->head + queue->size) % THREAD_MAX; \
+        queue->arr[idx] = thread;                       \
+        queue->size++;                                  \
+    })
+
+
 // TODO::
 // You should setup your own sleeping set as well as finish the marcos below
 #define thread_create(func, t_id, t_args)                                              \
@@ -65,16 +73,23 @@ extern jmp_buf sched_buf;
         func(t_id, t_args);                                                            \
     })
 
-#define thread_setup(t_id, t_args)                                                     \
-    ({ \
-        if (t_id == 0) break;                                        \
-        current_thread->id = t_id;                                   \
-        current_thread->args = t_args;                               \
-        int arr_idx = (ready_queue->head + ready_queue->size) % THREAD_MAX; \
-        ready_queue->arr[arr_idx] = current_thread;                  \
-        printf("thread [%d]: set up routine [%s]", current_thread->id, __func__);\
+#define thread_setup(t_id, t_args)                       \
+    ({                                                  \
+        struct tcb* new_tcb = (struct tcb*) calloc(1, sizeof(struct tcb)); \
+        new_tcb->id = t_id;                            \
+        new_tcb->args = t_args;                        \
+        \
+        int jmpVal = setjmp(current_thread->env);        \
+        if (t_id == 0) {                                \
+            idle_thread = new_tcb;\
+            return;\
+        } else {                                        \
+            queue_add(ready_queue, new_tcb);     \
+            return;\
+        }                                               \
     })
-        
+
+
 #define thread_yield()                                  \
     ({                                                  \
     })
