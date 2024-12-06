@@ -105,16 +105,19 @@ extern jmp_buf sched_buf;
         /* Unblock SIGTSTP */                                       \
         sigprocmask(SIG_UNBLOCK, &sigset, &oldset);                 \
                                                                     \
-        /* Block SIGTSTP  */                     \
+        /* Block SIGTSTP  */                                        \
         sigprocmask(SIG_BLOCK, &sigset, NULL);                      \
                                                                     \
         /* Unblock SIGALRM */                                       \
         sigdelset(&sigset, SIGTSTP);                                \
         sigprocmask(SIG_UNBLOCK, &sigset, NULL);                    \
                                                                     \
-        /* Block SIGALRM */                \
+        /* Block SIGALRM */                                         \
         sigaddset(&sigset, SIGALRM);                                \
         sigprocmask(SIG_BLOCK, &sigset, NULL);                      \
+                                                                    \
+        /*Relinquishes control to the scheduler*/                   \
+        siglongjmp(sched_buf, 1);                                   \
     })
 
 
