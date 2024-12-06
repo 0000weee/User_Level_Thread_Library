@@ -187,20 +187,20 @@ void remove_from_sleeping_set(struct tcb* thread) {
 
 
 #define thread_sleep(sec)                                           \
-({                                                                  \
-    if (sec < 1 || sec > 10) {                                      \
-        printf("Invalid sleep time: %d\n", sec);                    \
-        return;                                                     \
-    }                                                               \
-                                                                    \
-    /* Convert sleep seconds to simulated time slices */            \
-    current_thread->sleeping_time = sec;                            \
-                                                                    \
-        /* Add to sleeping_set */                                   \
-        add_to_sleeping_set(current_thread);                        \
-                                                                    \
-        /* Yield control to scheduler */                            \
-        thread_yield();                                             \
+    ({                                                                  \
+        if (sec < 1 || sec > 10) {                                      \
+            printf("Invalid sleep time: %d\n", sec);                    \
+            return;                                                     \
+        }                                                               \
+                                                                        \
+        /* Convert sleep seconds to simulated time slices */            \
+        current_thread->sleeping_time = sec;                            \
+                                                                        \
+        /* Add to sleeping_set */                                       \
+        add_to_sleeping_set(current_thread);                            \
+                                                                        \
+        /* Yield control to scheduler */                                \
+        thread_yield();                                                 \
     })
 
 
