@@ -157,16 +157,81 @@ extern jmp_buf sched_buf;
         rwlock.write_count -= 1;                                    \
     })
 
-#define thread_sleep(sec)                                            \
-    ({                                                               \
+struct sleeping_set {
+    struct tcb* threads[THREAD_MAX];
+    int size;
+};
+
+struct sleeping_set sleeping_set = {.size = 0};
+
+/* Add a thread to the sleeping_set */
+void add_to_sleeping_set(struct tcb* thread) {
+    if (sleeping_set.size < THREAD_MAX) {
+        sleeping_set.threads[sleeping_set.size++] = thread;
+    }
+}
+
+/* Remove a thread from the sleeping_set */
+void remove_from_sleeping_set(struct tcb* thread) {
+    for (int i = 0; i < sleeping_set.size; i++) {
+        if (sleeping_set.threads[i] == thread) {
+            for (int j = i; j < sleeping_set.size - 1; j++) {
+                sleeping_set.threads[j] = sleeping_set.threads[j + 1];
+            }
+            sleeping_set.threads[--sleeping_set.size] = NULL;
+            return;
+        }
+    }
+}
+
+
+#define thread_sleep(sec)                                           \
+({                                                                  \
+    if (sec < 1 || sec > 10) {                                      \
+        printf("Invalid sleep time: %d\n", sec);                    \
+        return;                                                     \
+    }                                                               \
+                                                                    \
+    /* Convert sleep seconds to simulated time slices */            \
+    current_thread->sleeping_time = sec;                            \
+                                                                    \
+        /* Add to sleeping_set */                                   \
+        add_to_sleeping_set(current_thread);                        \
+                                                                    \
+        /* Yield control to scheduler */                            \
+        thread_yield();                                             \
     })
 
-#define thread_awake(t_id)                                                        \
-    ({                                                                            \
+
+
+#define thread_awake(t_id)                                          \
+    ({                                                              \
+        struct tcb* thread = NULL;                                  \
+                                                                    \
+        /* Find thread in sleeping_set */                           \
+        for (int i = 0; i < sleeping_set.size; i++) {               \
+            if (sleeping_set.threads[i]->id == t_id) {              \
+                thread = sleeping_set.threads[i];                   \
+                break;                                              \
+            }                                                       \
+        }                                                           \
+                                                                    \
+        /* If thread is found, wake it up */                        \
+        if (thread) {                                               \
+            thread->sleeping_time = 0;                              \
+            remove_from_sleeping_set(thread);                       \
+            queue_add(ready_queue, thread);                         \
+        }                                                           \
     })
 
-#define thread_exit()                                    \
-    ({                                                   \
+
+#define thread_exit()                                               \
+    ({                                                              \
+        printf("thread [%d]: exit\n", current_thread->id);          \
+                                                                    \
+        /* Jump to scheduler using longjmp */                       \
+        longjmp(scheduler_env, 1);                                  \
     })
+
 
 #endif  // THREAD_TOOL_H
