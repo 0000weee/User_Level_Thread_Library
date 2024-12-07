@@ -79,7 +79,7 @@ void scheduler() {
     int jmpVal = setjmp(sched_buf);
     if (jmpVal == 0){ // Scheduler Initialization
         // Create the idle thread with ID 0 and the routine idle().
-        idle(0, NULL);
+        thread_create(0, idle, NULL);
     }
     else if (jmpVal = JUMP_FROM_SIGNAL_HANDLER){
         while (1) {
@@ -91,7 +91,7 @@ void scheduler() {
 
             // 3. Managing Sleeping Threads
             managing_sleeping_threads();
-            
+
             // 4. Handling Waiting Threads
 
             // 5. Handling Previously Running Threads
