@@ -7,10 +7,11 @@
 #include "routine.h"
 #include "thread_tool.h"
 
-struct sleeping_set sleeping_set;
 // TODO::
 // Prints out the signal you received.
 // This function should not return. Instead, jumps to the scheduler.
+//SIGTSTP: Used for manual context switching, triggered by pressing Ctrl+Z on terminal or the judge.
+//SIGALRM: Used for automatic context switching, triggered by the alarm() system call to enforce time slices.
 void sighandler(int signum) {
     if (signum == SIGTSTP){
         // 處理 SIGTSTP 信號
@@ -22,6 +23,7 @@ void sighandler(int signum) {
     }else{
         // 處理 default signal
     }
+
 }
 
 void reset_alarm() {
@@ -57,6 +59,7 @@ void switch_thread(struct tcb *next_thread) {
     }
 }
 
+struct sleeping_set sleeping_set;
 // TODO::
 // Perfectly setting up your scheduler.
 // 1. Reset the Alarm
@@ -68,17 +71,18 @@ void scheduler() {
         //Create the idle thread with ID 0 and the routine idle().
         idle(0, NULL);
     }
-
-    while (1) {
-        clear_pending_signals(); // 清除掛起的信號
-        reset_alarm();           // 重設鬧鐘
-        
-        // 從就緒隊列中選擇下一個執行緒
-        struct tcb *next_thread = pick_next_thread();
-        if (next_thread) {
-            switch_thread(next_thread);
-        } else {
-            idle(0, NULL);       // 無可運行執行緒時進入閒置
+    else{
+        while (1) {
+            clear_pending_signals(); // 清除掛起的信號
+            reset_alarm();           // 重設鬧鐘
+            
+            // 從就緒隊列中選擇下一個執行緒
+            struct tcb *next_thread = pick_next_thread();
+            if (next_thread) {
+                switch_thread(next_thread);
+            } else {
+                idle(0, NULL);       // 無可運行執行緒時進入閒置
+            }
         }
     }
 }
