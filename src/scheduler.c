@@ -77,6 +77,13 @@ void scheduler() {
             
             // 3. Managing Sleeping Threads
 
+            // 4. Handling Waiting Threads
+
+            // 5. Handling Previously Running Threads
+
+            // 6. Selecting the Next Thread
+
+            // 7. Context Switching
         }
     }
 }
