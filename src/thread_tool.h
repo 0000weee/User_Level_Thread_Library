@@ -8,6 +8,9 @@
 // The maximum number of threads.
 #define THREAD_MAX 100
 
+#define JUMP_FROM_THREAD_YIELD 1
+#define JUMP_FROM_SIGNAL_HANDLER 2
+#define JUMP_FROM_SCHEDULER 3
 
 void sighandler(int signum);
 void scheduler();
@@ -90,8 +93,6 @@ extern jmp_buf sched_buf;
             }                                                               \
         }                                                                   \
     })
-
-#define JUMP_FROM_THREAD_YIELD 1
 
 #define thread_yield()                                              \
     ({                                                              \

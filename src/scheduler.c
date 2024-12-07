@@ -12,7 +12,7 @@
 // This function should not return. Instead, jumps to the scheduler.
 //SIGTSTP: Used for manual context switching, triggered by pressing Ctrl+Z on terminal or the judge.
 //SIGALRM: Used for automatic context switching, triggered by the alarm() system call to enforce time slices.
-#define JUMP_FROM_SIGNAL_HANDLER 2
+
 void sighandler(int signum) {
     if (signum == SIGTSTP){
         printf("caught SIGTSTP\n");
@@ -91,7 +91,7 @@ void scheduler() {
 
             // 3. Managing Sleeping Threads
             managing_sleeping_threads();
-
+            
             // 4. Handling Waiting Threads
 
             // 5. Handling Previously Running Threads
