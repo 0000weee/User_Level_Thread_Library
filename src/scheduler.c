@@ -61,6 +61,17 @@ void switch_thread(struct tcb *next_thread) {
 }
 
 struct sleeping_set sleeping_set;
+
+void managing_sleeping_threads(){
+    for (int i = 0; i < sleeping_set.size; i++) {
+        if (sleeping_set.threads[i].sleeping_time > 0) {
+            sleeping_set.threads[i].sleeping_time -= time_slice;
+            if (sleeping_set.threads[i].sleeping_time <= 0) {
+                queue_add(ready_queue, sleeping_set.threads[i]);
+            }
+        }
+    }
+}
 // TODO::
 // Perfectly setting up your scheduler.
 void scheduler() {
@@ -72,11 +83,15 @@ void scheduler() {
     }
     else if (jmpVal = JUMP_FROM_SIGNAL_HANDLER){
         while (1) {
-            reset_alarm();           // 1. Reset the Alarm
-            clear_pending_signals(); // 2. Clearing the Pending Signals
-            
-            // 3. Managing Sleeping Threads
+            // 1. Reset the Alarm
+            reset_alarm();
 
+            // 2. Clearing the Pending Signals       
+            clear_pending_signals();
+
+            // 3. Managing Sleeping Threads
+            managing_sleeping_threads();
+            
             // 4. Handling Waiting Threads
 
             // 5. Handling Previously Running Threads
