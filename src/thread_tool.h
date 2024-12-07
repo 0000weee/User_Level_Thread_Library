@@ -73,24 +73,31 @@ extern jmp_buf sched_buf;
         func(t_id, t_args);                                                            \
     })
 
-#define thread_setup(t_id, t_args)                      \
-    ({                                                  \
-        struct tcb* new_tcb = (struct tcb*) calloc(1, sizeof(struct tcb)); \
-        new_tcb->id = t_id;                             \
-        new_tcb->args = t_args;                         \
-                                                        \
-        int jmpVal = setjmp(new_tcb->env);       \
-                                                        \
-        if (t_id == 0) {                                \
-            idle_thread = new_tcb;                      \
-            return;                                     \
-        } else {                                        \
-            queue_add(ready_queue, new_tcb);            \
-            return;                                     \
-        }                                               \
+#define thread_setup(t_id, t_args)                                          \
+    ({                                                                      \
+        struct tcb* new_tcb = (struct tcb*) calloc(1, sizeof(struct tcb));  \
+        new_tcb->id = t_id;                                                 \
+        new_tcb->args = t_args;                                             \
+                                                                            \
+        int jmpVal = setjmp(new_tcb->env);                                  \
+        if (jmpVal = 0){                                                    \
+            if (t_id == 0) {                                                \
+                idle_thread = new_tcb;                                      \
+                return;                                                     \
+            } else {                                                        \
+                queue_add(ready_queue, new_tcb);                            \
+                return;                                                     \
+            }                                                               \
+        }else{                                                              \
+            if (t_id == 0) {                                                \
+                idle_thread = new_tcb;                                      \
+            } else {                                                        \
+                queue_add(ready_queue, new_tcb);                            \
+            }                                                               \
+        }                                                                   \
     })
 
-#define jmpFromYield 1
+#define JUMP_FROM_THREAD_YIELD 1
 
 #define thread_yield()                                              \
     ({                                                              \
@@ -118,7 +125,9 @@ extern jmp_buf sched_buf;
         sigprocmask(SIG_BLOCK, &sigset, NULL);                      \
                                                                     \
         /*Relinquishes control to the scheduler*/                   \
-        siglongjmp(sched_buf, jmpFromYield);                        \
+        if (jmpVal == 0){                                           \
+            siglongjmp(sched_buf, JUMP_FROM_THREAD_YIELD);          \
+        }                                                           \        
     })
 
 
@@ -127,11 +136,11 @@ extern jmp_buf sched_buf;
         setjmp(current_thread->env);                                \
         while(1){                                                   \
             if (rwlock.write_count > 0){                            \
-            queue_add(waiting_queue, current_thread);               \
-            thread_yield();                                         \
+                queue_add(waiting_queue, current_thread);           \
+                thread_yield();                                     \
             }                                                       \
             else{                                                   \
-                rwlock.read_count += 1;                            \
+                rwlock.read_count += 1;                             \
                 break;                                              \
             }                                                       \
         }                                                           \
@@ -141,12 +150,12 @@ extern jmp_buf sched_buf;
     ({                                                              \
         setjmp(current_thread->env);                                \
         while(1){                                                   \
-            if (rwlock.write_count > 0 || rwlock.read_count > 0){   \                        \
-            queue_add(waiting_queue, current_thread);               \
-            thread_yield();                                         \
+            if (rwlock.write_count > 0 || rwlock.read_count > 0){   \
+                queue_add(waiting_queue, current_thread);           \
+                thread_yield();                                     \
             }                                                       \
             else{                                                   \
-                rwlock.write_count += 1;                           \
+                rwlock.write_count += 1;                            \
                 break;                                              \
             }                                                       \
         }                                                           \                                                        
