@@ -88,7 +88,7 @@ extern jmp_buf sched_buf;
                 queue_add(ready_queue, new_tcb);                            \
                 return;                                                     \
             }                                                               \
-        }
+        }                                                                   \
     })
 
 #define JUMP_FROM_THREAD_YIELD 1
