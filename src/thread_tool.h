@@ -176,7 +176,7 @@ struct sleeping_set {
     int size;
 };
 
-struct sleeping_set sleeping_set = {.size = 0};
+extern struct sleeping_set sleeping_set = {.size = 0};
 
 /* Add a thread to the sleeping_set */
 void add_to_sleeping_set(struct tcb* thread) {
