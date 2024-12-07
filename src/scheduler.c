@@ -12,18 +12,19 @@
 // This function should not return. Instead, jumps to the scheduler.
 //SIGTSTP: Used for manual context switching, triggered by pressing Ctrl+Z on terminal or the judge.
 //SIGALRM: Used for automatic context switching, triggered by the alarm() system call to enforce time slices.
+#define JUMP_FROM_SIGNAL_HANDLER 2
 void sighandler(int signum) {
     if (signum == SIGTSTP){
         // 處理 SIGTSTP 信號
         printf("caught SIGTSTP\n");
 
-    }else if(signum == SIGALRM){
+    }else if (signum == SIGALRM){
         // 處理 SIGALRM 信號
         printf("caught SIGALRM\n");
     }else{
         // 處理 default signal
     }
-
+    longjmp(sched_buf, JUMP_FROM_SIGNAL_HANDLER);
 }
 
 void reset_alarm() {
@@ -67,11 +68,12 @@ struct sleeping_set sleeping_set;
 // 3. Managing Sleeping Threads
 void scheduler() {
     // Your code here
-    if (setjmp(sched_buf) == 0){ // Call setjmp() to save the scheduler's context
+    int jmpVal = setjmp(sched_buf);
+    if (jmpVal == 0){ // Call setjmp() to save the scheduler's context
         //Create the idle thread with ID 0 and the routine idle().
         idle(0, NULL);
     }
-    else{
+    else if (jmpVal = JUMP_FROM_SIGNAL_HANDLER){
         while (1) {
             clear_pending_signals(); // 清除掛起的信號
             reset_alarm();           // 重設鬧鐘
