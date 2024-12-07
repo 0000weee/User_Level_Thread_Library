@@ -15,14 +15,14 @@
 #define JUMP_FROM_SIGNAL_HANDLER 2
 void sighandler(int signum) {
     if (signum == SIGTSTP){
-        // 處理 SIGTSTP 信號
         printf("caught SIGTSTP\n");
+        // 接著要處理 SIGTSTP 信號
 
     }else if (signum == SIGALRM){
-        // 處理 SIGALRM 信號
         printf("caught SIGALRM\n");
+        // 接著要處理 SIGALRM 信號
     }else{
-        // 處理 default signal
+        // 處理 default signal, 忽略它?
     }
     longjmp(sched_buf, JUMP_FROM_SIGNAL_HANDLER);
 }
@@ -63,28 +63,20 @@ void switch_thread(struct tcb *next_thread) {
 struct sleeping_set sleeping_set;
 // TODO::
 // Perfectly setting up your scheduler.
-// 1. Reset the Alarm
-// 2. Clearing the Pending Signals
-// 3. Managing Sleeping Threads
 void scheduler() {
     // Your code here
     int jmpVal = setjmp(sched_buf);
-    if (jmpVal == 0){ // Call setjmp() to save the scheduler's context
-        //Create the idle thread with ID 0 and the routine idle().
+    if (jmpVal == 0){ // Scheduler Initialization
+        // Create the idle thread with ID 0 and the routine idle().
         idle(0, NULL);
     }
     else if (jmpVal = JUMP_FROM_SIGNAL_HANDLER){
         while (1) {
-            clear_pending_signals(); // 清除掛起的信號
-            reset_alarm();           // 重設鬧鐘
+            reset_alarm();           // 1. Reset the Alarm
+            clear_pending_signals(); // 2. Clearing the Pending Signals
             
-            // 從就緒隊列中選擇下一個執行緒
-            struct tcb *next_thread = pick_next_thread();
-            if (next_thread) {
-                switch_thread(next_thread);
-            } else {
-                idle(0, NULL);       // 無可運行執行緒時進入閒置
-            }
+            // 3. Managing Sleeping Threads
+
         }
     }
 }
