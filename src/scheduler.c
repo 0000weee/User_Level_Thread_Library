@@ -7,6 +7,7 @@
 #include "routine.h"
 #include "thread_tool.h"
 
+struct sleeping_set sleeping_set;
 // TODO::
 // Prints out the signal you received.
 // This function should not return. Instead, jumps to the scheduler.
