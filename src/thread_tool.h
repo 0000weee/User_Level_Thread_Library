@@ -88,13 +88,7 @@ extern jmp_buf sched_buf;
                 queue_add(ready_queue, new_tcb);                            \
                 return;                                                     \
             }                                                               \
-        }else{                                                              \
-            if (t_id == 0) {                                                \
-                idle_thread = new_tcb;                                      \
-            } else {                                                        \
-                queue_add(ready_queue, new_tcb);                            \
-            }                                                               \
-        }                                                                   \
+        }
     })
 
 #define JUMP_FROM_THREAD_YIELD 1
