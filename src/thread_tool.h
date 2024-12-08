@@ -61,13 +61,18 @@ extern int time_slice;
 // The long jump buffer for the scheduler.
 extern jmp_buf sched_buf;
 
-#define queue_add(queue, thread)                         \
+/*#define queue_add(queue, thread)                         \
     ({                                                  \
         int idx = (queue->head + queue->size) % THREAD_MAX; \
         queue->arr[idx] = thread;                       \
         queue->size++;                                  \
-    })
+    })*/
 
+void queue_add(struct tcb_queue queue, struct tcb *thread){
+    int idx = (queue->head + queue->size) % THREAD_MAX;
+    queue->arr[idx] = thread;
+    queue->size++;
+}
 
 // TODO::
 // You should setup your own sleeping set as well as finish the marcos below

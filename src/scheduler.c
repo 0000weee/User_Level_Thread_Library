@@ -72,6 +72,40 @@ void managing_sleeping_threads(){
         }
     }
 }
+
+void handling_waiting_threads(){
+    /*  If the head of the waiting_queue can acquire the resource, 
+        it is moved to the ready_queue. 
+        Repeat this process until no more threads can be moved.
+    */
+    while (waiting_queue.size > 0){
+        struct tcb* head_of_the_waiting_queue = waiting_queue.arr[waiting_queue.head % THREAD_MAX];
+
+        switch (head_of_the_waiting_queue->waiting_for){
+            case 0: // no resource
+                queue_add(handling_waiting_threads, ready_queue);
+                waiting_queue.head++;
+                waiting_queue.size--;
+                break;
+            case 1: // read lock
+                if(rwlock.write_count == 0){
+                    queue_add(handling_waiting_threads, ready_queue);
+                    waiting_queue.head++;
+                    waiting_queue.size--;
+                }
+                break;
+            case 2: // write lock
+                if(rwlock.write_count == 0 && rwlock.read_count == 0){
+                    queue_add(handling_waiting_threads, ready_queue);
+                    waiting_queue.head++;
+                    waiting_queue.size--;
+                }
+                break;
+            default:
+                break;
+        }
+    }
+}
 // TODO::
 // Perfectly setting up your scheduler.
 void scheduler() {
@@ -81,7 +115,7 @@ void scheduler() {
         // Create the idle thread with ID 0 and the routine idle().
         thread_create(0, idle, NULL);
     }
-    else if (jmpVal = JUMP_FROM_SIGNAL_HANDLER){
+    else {
         while (1) {
             // 1. Reset the Alarm
             reset_alarm();
@@ -93,7 +127,7 @@ void scheduler() {
             managing_sleeping_threads();
             
             // 4. Handling Waiting Threads
-
+            handling_waiting_threads();
             // 5. Handling Previously Running Threads
 
             // 6. Selecting the Next Thread
