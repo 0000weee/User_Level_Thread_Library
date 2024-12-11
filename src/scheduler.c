@@ -111,8 +111,9 @@ void handling_previously_running_threads(int prev_thread_status){
             if (current_thread->id != 0) // 非 idle
                 enqueue(ready_queue, current_thread);
             break;
-        case JUMP_FROM_LOCK:
+        case JUMP_FROM_LOCK:                                         
             enqueue(waiting_queue, current_thread);
+            thread_yield();  
             break;
         case JUMP_FROM_SLEEP:
             // 已處理，不需操作

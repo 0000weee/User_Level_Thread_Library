@@ -143,8 +143,7 @@ struct tcb* enqueue(struct tcb_queue queue, struct tcb *thread){
         setjmp(current_thread->env);                                \
         while(1){                                                   \
             if (rwlock.write_count > 0){                            \
-                enqueue(waiting_queue, current_thread);           \
-                thread_yield();                                     \
+                longjmp(sched_buf, JUMP_FROM_LOCK)                  \
             }                                                       \
             else{                                                   \
                 rwlock.read_count += 1;                             \
@@ -158,8 +157,7 @@ struct tcb* enqueue(struct tcb_queue queue, struct tcb *thread){
         setjmp(current_thread->env);                                \
         while(1){                                                   \
             if (rwlock.write_count > 0 || rwlock.read_count > 0){   \
-                enqueue(waiting_queue, current_thread);           \
-                thread_yield();                                     \
+                longjmp(sched_buf, JUMP_FROM_LOCK)                  \
             }                                                       \
             else{                                                   \
                 rwlock.write_count += 1;                            \
