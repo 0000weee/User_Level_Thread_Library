@@ -49,14 +49,6 @@ void clear_pending_signals() {
     sigaction(SIGALRM, &sa_default, NULL);
 }
 
-
-void switch_thread(struct tcb *next_thread) {
-    if (sigsetjmp(current_thread->env, 1) == 0) {
-        current_thread = next_thread;
-        siglongjmp(next_thread->env, JUMP_FROM_SCHEDULER);  // 跳到下一個執行緒上下文
-    }
-}
-
 struct sleeping_set sleeping_set;
 
 void managing_sleeping_threads(){
