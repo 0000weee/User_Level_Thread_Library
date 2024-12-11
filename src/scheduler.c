@@ -64,7 +64,7 @@ void managing_sleeping_threads(){
         if (sleeping_set.threads[i].sleeping_time > 0) {
             sleeping_set.threads[i].sleeping_time -= time_slice;
             if (sleeping_set.threads[i].sleeping_time <= 0) {
-                enqueue(ready_queue, sleeping_set.threads[i]);
+                enqueue(&ready_queue, sleeping_set.threads[i]);
             }
         }
     }
@@ -77,23 +77,26 @@ void handling_waiting_threads(){
     */
     while (waiting_queue.size > 0){
         struct tcb* head_of_the_waiting_queue = waiting_queue.arr[waiting_queue.head % THREAD_MAX];
+        if (head_of_the_waiting_queue == NULL){
+            return;
+        }
 
         switch (head_of_the_waiting_queue->waiting_for){
             case 0: // no resource
-                enqueue(handling_waiting_threads, ready_queue);
+                enqueue(&ready_queue, head_of_the_waiting_queue);
                 waiting_queue.head++;
                 waiting_queue.size--;
                 break;
             case 1: // read lock
-                if(rwlock.write_count == 0){
-                    enqueue(handling_waiting_threads, ready_queue);
+                if (rwlock.write_count == 0){
+                    enqueue(&ready_queue, handling_waiting_threads);
                     waiting_queue.head++;
                     waiting_queue.size--;
                 }
                 break;
             case 2: // write lock
-                if(rwlock.write_count == 0 && rwlock.read_count == 0){
-                    enqueue(handling_waiting_threads, ready_queue);
+                if (rwlock.write_count == 0 && rwlock.read_count == 0){
+                    enqueue(&ready_queue, handling_waiting_threads);
                     waiting_queue.head++;
                     waiting_queue.size--;
                 }
@@ -109,10 +112,10 @@ void handling_previously_running_threads(int prev_thread_status){
     switch (prev_thread_status) {
         case JUMP_FROM_THREAD_YIELD:
             if (current_thread->id != 0) // 非 idle
-                enqueue(ready_queue, current_thread);
+                enqueue(&ready_queue, current_thread);
             break;
         case JUMP_FROM_LOCK:                                         
-            enqueue(waiting_queue, current_thread);
+            enqueue(&waiting_queue, current_thread);
             thread_yield();  
             break;
         case JUMP_FROM_SLEEP:
@@ -126,13 +129,12 @@ void handling_previously_running_threads(int prev_thread_status){
 }
 
 void selecting_the_next_thread() {
-    tcb *next_thread = dequeue(ready_queue); // 從 ready_queue 中取出下一個執行緒
-    if (next_thread) {
-        // 若有執行緒準備好執行
+    struct tcb *next_thread = dequeue(ready_queue); // 從 ready_queue 中取出下一個執行緒
+    if (next_thread != NULL) { // ready_queue 有執行緒
         current_thread = next_thread;
         siglongjmp(next_thread->env, 1); // 切換到下一個執行緒
-    } else {
-        // ready_queue 為空
+        
+    } else { // ready_queue 為空       
         if (sleeping_set.size > 0) {
             // 如果有執行緒在睡眠中，調度 idle 執行緒
             idle(0, NULL);

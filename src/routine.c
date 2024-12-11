@@ -109,7 +109,7 @@ void enroll(int id, int *args) {
     sleep(1);
     thread_yield();
 
-    // Step 4: 獲取寫鎖並嘗試報名
+    // Step 4: 獲取寫鎖並嘗試加簽
     rwlock_acquire_writelock(&rwlock);
 
     const char *enroll_class = NULL;  // 要報名的課程名稱

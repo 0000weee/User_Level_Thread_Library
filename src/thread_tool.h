@@ -11,10 +11,9 @@
 #define JUMP_FROM_SCHEDULER 1
 #define JUMP_FROM_THREAD_YIELD 2
 #define JUMP_FROM_SIGNAL_HANDLER 3
-#define JUMP_FROM_SCHEDULER 4
-#define JUMP_FROM_LOCK 5
-#define JUMP_FROM_SLEEP 6
-#define JUMP_FROM_EXIT 7
+#define JUMP_FROM_LOCK 4
+#define JUMP_FROM_SLEEP 5
+#define JUMP_FROM_EXIT 6
 void sighandler(int signum);
 void scheduler();
 
@@ -64,13 +63,13 @@ extern int time_slice;
 // The long jump buffer for the scheduler.
 extern jmp_buf sched_buf;
 
-void enqueue(struct tcb_queue queue, struct tcb *thread){
+void enqueue(struct tcb_queue* queue, struct tcb *thread){
     int idx = (queue->head + queue->size) % THREAD_MAX;
     queue->arr[idx] = thread;
     queue->size++;
 }
 
-struct tcb* enqueue(struct tcb_queue queue, struct tcb *thread){
+struct tcb* dequeue(struct tcb_queue* queue, struct tcb *thread){
     if(queue->size > 0){
         queue->head++;
         queue->size--;
@@ -100,7 +99,7 @@ struct tcb* enqueue(struct tcb_queue queue, struct tcb *thread){
                 idle_thread = new_tcb;                                      \
                 return;                                                     \
             } else {                                                        \
-                enqueue(ready_queue, new_tcb);                            \
+                enqueue(&ready_queue, new_tcb);                            \
                 return;                                                     \
             }                                                               \
         }                                                                   \
@@ -239,7 +238,7 @@ void remove_from_sleeping_set(struct tcb* thread) {
         if (thread) {                                               \
             thread->sleeping_time = 0;                              \
             remove_from_sleeping_set(thread);                       \
-            enqueue(ready_queue, thread);                         \
+            enqueue(%ready_queue, thread);                         \
         }                                                           \
     })
 
