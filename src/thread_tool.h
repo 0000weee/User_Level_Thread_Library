@@ -70,13 +70,8 @@ extern jmp_buf sched_buf;
         (queue)->size++;                            \
     } while (0)
 
-#define dequeue(queue)                              \
-    ((queue)->size > 0 ?                            \
-        ((queue)->size--,                           \
-        int idx = ((queue)->head) % THREAD_MAX ,     \
-        (queue)->head++,                             \
-        (queue)->arr[idx])                          \
-        : NULL)
+#define dequeue(queue) \
+    ((queue)->head++, (queue)->size--, (queue)->arr[(queue)->head - 1])
 
 
 // TODO::
