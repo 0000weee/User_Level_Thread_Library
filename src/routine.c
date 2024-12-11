@@ -6,7 +6,7 @@
 
 #include "thread_tool.h"
 
-void idle(int id, int *args) {
+void idle(int id) {
     // TODO:: IDLE ^-^
     while (1) {
         printf("thread [%d]: idle\n", id);
@@ -90,7 +90,7 @@ void enroll(int id, int *args) {
 
     // Step 2: 喚醒好友並讀取課程剩餘名額
     thread_awake(b);
-    rwlock_acquire_readlock(&rwlock);
+    read_lock();
     printf("thread %d: acquire read lock\n", id);
 
     int remaining_pj = q_p;  // 剩餘的 pj_class 名額
@@ -100,7 +100,7 @@ void enroll(int id, int *args) {
     thread_yield();
 
     // Step 3: 釋放讀鎖並計算優先值
-    rwlock_release_readlock(&rwlock);
+    read_unlock();
 
     int p_p = d_p * remaining_pj;  // Priority for pj_class
     int p_s = d_s * remaining_sw;  // Priority for sw_class
@@ -109,8 +109,8 @@ void enroll(int id, int *args) {
     sleep(1);
     thread_yield();
 
-    // Step 4: 獲取寫鎖並嘗試加簽
-    rwlock_acquire_writelock(&rwlock);
+    // Step 4: 獲取寫鎖並嘗試報名
+    write_lock();
 
     const char *enroll_class = NULL;  // 要報名的課程名稱
     if (p_p > p_s || (p_p == p_s && d_p > d_s)) {
@@ -139,7 +139,7 @@ void enroll(int id, int *args) {
     thread_yield();
 
     // Step 5: 釋放寫鎖並退出
-    rwlock_release_writelock(&rwlock);
+    write_unlock();
     printf("thread %d: release write lock\n", id);
 
     sleep(1);

@@ -61,9 +61,9 @@ struct sleeping_set sleeping_set;
 
 void managing_sleeping_threads(){
     for (int i = 0; i < sleeping_set.size; i++) {
-        if (sleeping_set.threads[i].sleeping_time > 0) {
-            sleeping_set.threads[i].sleeping_time -= time_slice;
-            if (sleeping_set.threads[i].sleeping_time <= 0) {
+        if (sleeping_set.threads[i]->sleeping_time > 0) {
+            sleeping_set.threads[i]->sleeping_time -= time_slice;
+            if (sleeping_set.threads[i]->sleeping_time <= 0) {
                 enqueue(&ready_queue, sleeping_set.threads[i]);
             }
         }
@@ -89,14 +89,14 @@ void handling_waiting_threads(){
                 break;
             case 1: // read lock
                 if (rwlock.write_count == 0){
-                    enqueue(&ready_queue, handling_waiting_threads);
+                    enqueue(&ready_queue, head_of_the_waiting_queue);
                     waiting_queue.head++;
                     waiting_queue.size--;
                 }
                 break;
             case 2: // write lock
                 if (rwlock.write_count == 0 && rwlock.read_count == 0){
-                    enqueue(&ready_queue, handling_waiting_threads);
+                    enqueue(&ready_queue, head_of_the_waiting_queue);
                     waiting_queue.head++;
                     waiting_queue.size--;
                 }
@@ -153,7 +153,7 @@ void scheduler() {
     int jmpVal = setjmp(sched_buf);
     if (jmpVal == 0){ 
         // Scheduler Initialization
-        thread_create(0, idle, NULL);
+        thread_create(idle, 0, NULL);
     }
     else {
         while (1) {

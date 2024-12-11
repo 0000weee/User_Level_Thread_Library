@@ -69,15 +69,14 @@ void enqueue(struct tcb_queue* queue, struct tcb *thread){
     queue->size++;
 }
 
-struct tcb* dequeue(struct tcb_queue* queue, struct tcb *thread){
+struct tcb* dequeue(struct tcb_queue* queue){
     if(queue->size > 0){
         queue->head++;
         queue->size--;
-        return queue->arr[head-1];
+        return queue->arr[(queue->head) -1];
     }else{
         return NULL;
     }
-    
 }
 
 // TODO::
@@ -94,12 +93,12 @@ struct tcb* dequeue(struct tcb_queue* queue, struct tcb *thread){
         new_tcb->args = t_args;                                             \
                                                                             \
         int jmpVal = setjmp(new_tcb->env);                                  \
-        if (jmpVal = 0){                                                    \
+        if (jmpVal == 0){                                                    \
             if (t_id == 0) {                                                \
                 idle_thread = new_tcb;                                      \
                 return;                                                     \
             } else {                                                        \
-                enqueue(&ready_queue, new_tcb);                            \
+                enqueue(&ready_queue, new_tcb);                             \
                 return;                                                     \
             }                                                               \
         }                                                                   \
@@ -133,7 +132,7 @@ struct tcb* dequeue(struct tcb_queue* queue, struct tcb *thread){
         /*Relinquishes control to the scheduler*/                   \
         if (jmpVal == 0){                                           \
             siglongjmp(sched_buf, JUMP_FROM_THREAD_YIELD);          \
-        }                                                           \        
+        }                                                           \
     })
 
 
@@ -142,7 +141,7 @@ struct tcb* dequeue(struct tcb_queue* queue, struct tcb *thread){
         setjmp(current_thread->env);                                \
         while(1){                                                   \
             if (rwlock.write_count > 0){                            \
-                longjmp(sched_buf, JUMP_FROM_LOCK)                  \
+                longjmp(sched_buf, JUMP_FROM_LOCK);                  \
             }                                                       \
             else{                                                   \
                 rwlock.read_count += 1;                             \
@@ -156,13 +155,13 @@ struct tcb* dequeue(struct tcb_queue* queue, struct tcb *thread){
         setjmp(current_thread->env);                                \
         while(1){                                                   \
             if (rwlock.write_count > 0 || rwlock.read_count > 0){   \
-                longjmp(sched_buf, JUMP_FROM_LOCK)                  \
+                longjmp(sched_buf, JUMP_FROM_LOCK);                 \
             }                                                       \
             else{                                                   \
                 rwlock.write_count += 1;                            \
                 break;                                              \
             }                                                       \
-        }                                                           \                                                        
+        }                                                           \
     })
 
 #define read_unlock()                                               \
@@ -180,7 +179,7 @@ struct sleeping_set {
     int size;
 };
 
-extern struct sleeping_set sleeping_set = {.size = 0};
+extern struct sleeping_set sleeping_set;
 
 /* Add a thread to the sleeping_set */
 void add_to_sleeping_set(struct tcb* thread) {
@@ -238,7 +237,7 @@ void remove_from_sleeping_set(struct tcb* thread) {
         if (thread) {                                               \
             thread->sleeping_time = 0;                              \
             remove_from_sleeping_set(thread);                       \
-            enqueue(%ready_queue, thread);                         \
+            enqueue(&ready_queue, thread);                         \
         }                                                           \
     })
 
@@ -248,7 +247,7 @@ void remove_from_sleeping_set(struct tcb* thread) {
         printf("thread [%d]: exit\n", current_thread->id);          \
                                                                     \
         /* Jump to scheduler using longjmp */                       \
-        longjmp(scheduler_env, 1);                                  \
+        longjmp(sched_buf, 1);                                  \
     })
 
 
