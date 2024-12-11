@@ -16,11 +16,8 @@
 void sighandler(int signum) {
     if (signum == SIGTSTP){
         printf("caught SIGTSTP\n");
-        // 接著要處理 SIGTSTP 信號
-
     }else if (signum == SIGALRM){
         printf("caught SIGALRM\n");
-        // 接著要處理 SIGALRM 信號
     }else{
         // 處理 default signal, 忽略它?
     }
