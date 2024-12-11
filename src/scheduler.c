@@ -67,7 +67,7 @@ void managing_sleeping_threads(){
         if (sleeping_set.threads[i].sleeping_time > 0) {
             sleeping_set.threads[i].sleeping_time -= time_slice;
             if (sleeping_set.threads[i].sleeping_time <= 0) {
-                queue_add(ready_queue, sleeping_set.threads[i]);
+                enqueue(ready_queue, sleeping_set.threads[i]);
             }
         }
     }
@@ -83,20 +83,20 @@ void handling_waiting_threads(){
 
         switch (head_of_the_waiting_queue->waiting_for){
             case 0: // no resource
-                queue_add(handling_waiting_threads, ready_queue);
+                enqueue(handling_waiting_threads, ready_queue);
                 waiting_queue.head++;
                 waiting_queue.size--;
                 break;
             case 1: // read lock
                 if(rwlock.write_count == 0){
-                    queue_add(handling_waiting_threads, ready_queue);
+                    enqueue(handling_waiting_threads, ready_queue);
                     waiting_queue.head++;
                     waiting_queue.size--;
                 }
                 break;
             case 2: // write lock
                 if(rwlock.write_count == 0 && rwlock.read_count == 0){
-                    queue_add(handling_waiting_threads, ready_queue);
+                    enqueue(handling_waiting_threads, ready_queue);
                     waiting_queue.head++;
                     waiting_queue.size--;
                 }
@@ -106,13 +106,36 @@ void handling_waiting_threads(){
         }
     }
 }
+
+void handling_previously_running_threads(int prev_thread_status){
+    // 根據返回值處理當前執行緒
+    switch (prev_thread_status) {
+        case JUMP_FROM_THREAD_YIELD:
+            if (current_thread->id != 0) // 非 idle
+                enqueue(ready_queue, current_thread);
+            break;
+        case JUMP_FROM_LOCK:
+            enqueue(waiting_queue, current_thread);
+            break;
+        case JUMP_FROM_SLEEP:
+            // 已處理，不需操作
+            break;
+        case JUMP_FROM_EXIT:
+            free(current_thread->args);
+            free(current_thread);
+            break;
+    }
+}
+
+void selecting_the_next_thread(){
+
+}
 // TODO::
 // Perfectly setting up your scheduler.
 void scheduler() {
-    // Your code here
     int jmpVal = setjmp(sched_buf);
-    if (jmpVal == 0){ // Scheduler Initialization
-        // Create the idle thread with ID 0 and the routine idle().
+    if (jmpVal == 0){ 
+        // Scheduler Initialization
         thread_create(0, idle, NULL);
     }
     else {
@@ -129,9 +152,9 @@ void scheduler() {
             // 4. Handling Waiting Threads
             handling_waiting_threads();
             // 5. Handling Previously Running Threads
-
+            handling_previously_running_threads(jmpVal);
             // 6. Selecting the Next Thread
-
+            selecting_the_next_thread();
             // 7. Context Switching
         }
     }
