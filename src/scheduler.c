@@ -157,22 +157,20 @@ void scheduler() {
     }
     else {
         while (1) {
-            // 1. Reset the Alarm
+            // 1.
             reset_alarm();
-
-            // 2. Clearing the Pending Signals       
+            // 2.      
             clear_pending_signals();
-
-            // 3. Managing Sleeping Threads
+            // 3.
             managing_sleeping_threads();
-            
-            // 4. Handling Waiting Threads
+            // 4.
             handling_waiting_threads();
-            // 5. Handling Previously Running Threads
+            // 5.
             handling_previously_running_threads(jmpVal);
-            // 6. Selecting the Next Thread
+            // 6.
             selecting_the_next_thread();
             // 7. Context Switching
+            longjmp(sched_buf, JUMP_FROM_SCHEDULER);
         }
     }
 }

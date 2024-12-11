@@ -8,12 +8,13 @@
 // The maximum number of threads.
 #define THREAD_MAX 100
 
-#define JUMP_FROM_THREAD_YIELD 1
-#define JUMP_FROM_SIGNAL_HANDLER 2
-#define JUMP_FROM_SCHEDULER 3
-#define JUMP_FROM_LOCK 4
-#define JUMP_FROM_SLEEP 5
-#define JUMP_FROM_EXIT 6
+#define JUMP_FROM_SCHEDULER 1
+#define JUMP_FROM_THREAD_YIELD 2
+#define JUMP_FROM_SIGNAL_HANDLER 3
+#define JUMP_FROM_SCHEDULER 4
+#define JUMP_FROM_LOCK 5
+#define JUMP_FROM_SLEEP 6
+#define JUMP_FROM_EXIT 7
 void sighandler(int signum);
 void scheduler();
 
