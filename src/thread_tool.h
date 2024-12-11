@@ -69,6 +69,17 @@ void enqueue(struct tcb_queue queue, struct tcb *thread){
     queue->size++;
 }
 
+struct tcb* enqueue(struct tcb_queue queue, struct tcb *thread){
+    if(queue->size > 0){
+        queue->head++;
+        queue->size--;
+        return queue->arr[head-1];
+    }else{
+        return NULL;
+    }
+    
+}
+
 // TODO::
 // You should setup your own sleeping set as well as finish the marcos below
 #define thread_create(func, t_id, t_args)                                              \

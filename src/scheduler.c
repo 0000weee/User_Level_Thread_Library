@@ -127,9 +127,26 @@ void handling_previously_running_threads(int prev_thread_status){
     }
 }
 
-void selecting_the_next_thread(){
-
+void selecting_the_next_thread() {
+    tcb *next_thread = dequeue(ready_queue); // 從 ready_queue 中取出下一個執行緒
+    if (next_thread) {
+        // 若有執行緒準備好執行
+        current_thread = next_thread;
+        siglongjmp(next_thread->env, 1); // 切換到下一個執行緒
+    } else {
+        // ready_queue 為空
+        if (sleeping_set.size > 0) {
+            // 如果有執行緒在睡眠中，調度 idle 執行緒
+            idle(0, NULL);
+        } else {
+            // 沒有任何執行緒，清理 idle 的資源並返回
+            free(current_thread->args);
+            free(current_thread);
+            return; // 返回到 start_threading()，進一步返回到 main()
+        }
+    }
 }
+
 // TODO::
 // Perfectly setting up your scheduler.
 void scheduler() {
