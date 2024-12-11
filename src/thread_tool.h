@@ -73,8 +73,11 @@ extern jmp_buf sched_buf;
 #define dequeue(queue)                              \
     ((queue)->size > 0 ?                            \
         ((queue)->size--,                           \
-        (queue)->arr[((queue)->head++) % THREAD_MAX]) \
+        int idx = ((queue)->head) % THREAD_MAX ,     \
+        (queue)->head++,                             \
+        (queue)->arr[idx])                          \
         : NULL)
+
 
 // TODO::
 // You should setup your own sleeping set as well as finish the marcos below
@@ -245,7 +248,7 @@ extern struct sleeping_set sleeping_set;
         printf("thread [%d]: exit\n", current_thread->id);          \
                                                                     \
         /* Jump to scheduler using longjmp */                       \
-        siglongjmp(sched_buf, 1);                                  \
+        siglongjmp(sched_buf, 1);                                   \
     })
 
 
