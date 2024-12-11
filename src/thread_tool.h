@@ -178,25 +178,26 @@ struct sleeping_set {
 
 extern struct sleeping_set sleeping_set;
 
-/* Add a thread to the sleeping_set */
-void add_to_sleeping_set(struct tcb* thread) {
-    if (sleeping_set.size < THREAD_MAX) {
-        sleeping_set.threads[sleeping_set.size++] = thread;
-    }
-}
+#define add_to_sleeping_set(sleeping_set, thread)                          \
+    do {                                                                   \
+        if ((sleeping_set).size < THREAD_MAX) {                            \
+            (sleeping_set).threads[(sleeping_set).size++] = (thread);      \
+        }                                                                  \
+    } while (0)
 
-/* Remove a thread from the sleeping_set */
-void remove_from_sleeping_set(struct tcb* thread) {
-    for (int i = 0; i < sleeping_set.size; i++) {
-        if (sleeping_set.threads[i] == thread) {
-            for (int j = i; j < sleeping_set.size - 1; j++) {
-                sleeping_set.threads[j] = sleeping_set.threads[j + 1];
-            }
-            sleeping_set.threads[--sleeping_set.size] = NULL;
-            return;
-        }
-    }
-}
+#define remove_from_sleeping_set(sleeping_set, thread)                     \
+    do {                                                                   \
+        for (int i = 0; i < (sleeping_set).size; i++) {                    \
+            if ((sleeping_set).threads[i] == (thread)) {                   \
+                for (int j = i; j < (sleeping_set).size - 1; j++) {        \
+                    (sleeping_set).threads[j] = (sleeping_set).threads[j + 1]; \
+                }                                                          \
+                (sleeping_set).threads[--(sleeping_set).size] = NULL;      \
+                break;                                                     \
+            }                                                              \
+        }                                                                  \
+    } while (0)
+
 
 
 #define thread_sleep(sec)                                           \
