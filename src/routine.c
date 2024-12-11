@@ -75,17 +75,75 @@ void pm(int id, int *args) {
     }
 }
 
-
 void enroll(int id, int *args) {
-    // TODO:: enroll !! -^-
+    // Step 1: 初始化執行緒，並獲取參數
     thread_setup(id, args);
 
-    sleep(1);
+    int d_p = args[0];  // Desire for pj_class
+    int d_s = args[1];  // Desire for sw_class
+    int s = args[2];    // Sleep time
+    int b = args[3];    // Best friend's ID
 
-    if () {
-        thread_exit();
+    // Step 1: 模擬 oversleeping
+    printf("thread %d: sleep %d\n", id, s);
+    thread_sleep(s);
+
+    // Step 2: 喚醒好友並讀取課程剩餘名額
+    thread_awake(b);
+    rwlock_acquire_readlock(&rwlock);
+    printf("thread %d: acquire read lock\n", id);
+
+    int remaining_pj = q_p;  // 剩餘的 pj_class 名額
+    int remaining_sw = q_s;  // 剩餘的 sw_class 名額
+
+    sleep(1);
+    thread_yield();
+
+    // Step 3: 釋放讀鎖並計算優先值
+    rwlock_release_readlock(&rwlock);
+
+    int p_p = d_p * remaining_pj;  // Priority for pj_class
+    int p_s = d_s * remaining_sw;  // Priority for sw_class
+    printf("thread %d: release read lock, p_p = %d, p_s = %d\n", id, p_p, p_s);
+
+    sleep(1);
+    thread_yield();
+
+    // Step 4: 獲取寫鎖並嘗試報名
+    rwlock_acquire_writelock(&rwlock);
+
+    const char *enroll_class = NULL;  // 要報名的課程名稱
+    if (p_p > p_s || (p_p == p_s && d_p > d_s)) {
+        // 優先報名 pj_class
+        if (q_p > 0) {
+            q_p--;  // 減少剩餘名額
+            enroll_class = "pj_class";
+        } else if (q_s > 0) {
+            q_s--;
+            enroll_class = "sw_class";
+        }
     } else {
-        thread_yield();
+        // 優先報名 sw_class
+        if (q_s > 0) {
+            q_s--;  // 減少剩餘名額
+            enroll_class = "sw_class";
+        } else if (q_p > 0) {
+            q_p--;
+            enroll_class = "pj_class";
+        }
     }
+
+    printf("thread %d: acquire write lock, enroll in %s\n", id, enroll_class);
+
+    sleep(1);
+    thread_yield();
+
+    // Step 5: 釋放寫鎖並退出
+    rwlock_release_writelock(&rwlock);
+    printf("thread %d: release write lock\n", id);
+
+    sleep(1);
+    thread_exit();
 }
+
 
