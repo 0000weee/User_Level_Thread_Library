@@ -63,21 +63,18 @@ extern int time_slice;
 // The long jump buffer for the scheduler.
 extern jmp_buf sched_buf;
 
-void enqueue(struct tcb_queue* queue, struct tcb *thread){
-    int idx = (queue->head + queue->size) % THREAD_MAX;
-    queue->arr[idx] = thread;
-    queue->size++;
-}
+#define enqueue(queue, thread)                      \
+    do {                                            \
+        int idx = ((queue)->head + (queue)->size) % THREAD_MAX; \
+        (queue)->arr[idx] = (thread);               \
+        (queue)->size++;                            \
+    } while (0)
 
-struct tcb* dequeue(struct tcb_queue* queue){
-    if(queue->size > 0){
-        queue->head++;
-        queue->size--;
-        return queue->arr[(queue->head) -1];
-    }else{
-        return NULL;
-    }
-}
+#define dequeue(queue)                              \
+    ((queue)->size > 0 ?                            \
+        ((queue)->size--,                           \
+        (queue)->arr[((queue)->head++) % THREAD_MAX]) \
+        : NULL)
 
 // TODO::
 // You should setup your own sleeping set as well as finish the marcos below
