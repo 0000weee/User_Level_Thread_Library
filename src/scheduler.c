@@ -21,7 +21,7 @@ void sighandler(int signum) {
     }else{
         // 處理 default signal, 忽略它?
     }
-    longjmp(sched_buf, JUMP_FROM_SIGNAL_HANDLER);
+    siglongjmp(sched_buf, JUMP_FROM_SIGNAL_HANDLER);
 }
 
 void reset_alarm() {
@@ -51,9 +51,9 @@ void clear_pending_signals() {
 
 
 void switch_thread(struct tcb *next_thread) {
-    if (setjmp(current_thread->env) == 0) {
+    if (sigsetjmp(current_thread->env, 1) == 0) {
         current_thread = next_thread;
-        siglongjmp(next_thread->env, 1);  // 跳到下一個執行緒上下文
+        siglongjmp(next_thread->env, JUMP_FROM_SCHEDULER);  // 跳到下一個執行緒上下文
     }
 }
 
@@ -132,7 +132,8 @@ void selecting_the_next_thread() {
     struct tcb *next_thread = dequeue(ready_queue); // 從 ready_queue 中取出下一個執行緒
     if (next_thread != NULL) { // ready_queue 有執行緒
         current_thread = next_thread;
-        siglongjmp(next_thread->env, 1); // 切換到下一個執行緒
+        // 7. Context Switching
+        siglongjmp(next_thread->env, JUMP_FROM_SCHEDULER);
         
     } else { // ready_queue 為空       
         if (sleeping_set.size > 0) {
@@ -150,7 +151,7 @@ void selecting_the_next_thread() {
 // TODO::
 // Perfectly setting up your scheduler.
 void scheduler() {
-    int jmpVal = setjmp(sched_buf);
+    int jmpVal = sigsetjmp(sched_buf, 1);
     if (jmpVal == 0){ 
         // Scheduler Initialization
         thread_create(idle, 0, NULL);
@@ -169,12 +170,6 @@ void scheduler() {
             handling_previously_running_threads(jmpVal);
             // 6.
             selecting_the_next_thread();
-            // 7. Context Switching
-            longjmp(sched_buf, JUMP_FROM_SCHEDULER);
-            if(ready_queue.size==0 && waiting_queue.size==0){
-                // free all resource ?
-                break;
-            }
         }
     }
 }

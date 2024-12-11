@@ -89,7 +89,7 @@ extern jmp_buf sched_buf;
         new_tcb->id = t_id;                                                 \
         new_tcb->args = t_args;                                             \
                                                                             \
-        int jmpVal = setjmp(new_tcb->env);                                  \
+        int jmpVal = sigsetjmp(new_tcb->env, 1);                                  \
         if (jmpVal == 0){                                                    \
             if (t_id == 0) {                                                \
                 idle_thread = new_tcb;                                      \
@@ -135,10 +135,10 @@ extern jmp_buf sched_buf;
 
 #define read_lock()                                                 \
     ({                                                              \
-        setjmp(current_thread->env);                                \
+        sigsetjmp(current_thread->env, 1);                                \
         while(1){                                                   \
             if (rwlock.write_count > 0){                            \
-                longjmp(sched_buf, JUMP_FROM_LOCK);                  \
+                siglongjmp(sched_buf, JUMP_FROM_LOCK);                  \
             }                                                       \
             else{                                                   \
                 rwlock.read_count += 1;                             \
@@ -149,10 +149,10 @@ extern jmp_buf sched_buf;
 
 #define write_lock()                                                \
     ({                                                              \
-        setjmp(current_thread->env);                                \
+        sigsetjmp(current_thread->env, 1);                                \
         while(1){                                                   \
             if (rwlock.write_count > 0 || rwlock.read_count > 0){   \
-                longjmp(sched_buf, JUMP_FROM_LOCK);                 \
+                siglongjmp(sched_buf, JUMP_FROM_LOCK);                 \
             }                                                       \
             else{                                                   \
                 rwlock.write_count += 1;                            \
@@ -245,7 +245,7 @@ extern struct sleeping_set sleeping_set;
         printf("thread [%d]: exit\n", current_thread->id);          \
                                                                     \
         /* Jump to scheduler using longjmp */                       \
-        longjmp(sched_buf, 1);                                  \
+        siglongjmp(sched_buf, 1);                                  \
     })
 
 
