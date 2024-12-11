@@ -171,6 +171,10 @@ void scheduler() {
             selecting_the_next_thread();
             // 7. Context Switching
             longjmp(sched_buf, JUMP_FROM_SCHEDULER);
+            if(ready_queue.size==0 && waiting_queue.size==0){
+                // free all resource ?
+                break;
+            }
         }
     }
 }
