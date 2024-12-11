@@ -211,7 +211,7 @@ extern struct sleeping_set sleeping_set;
         current_thread->sleeping_time = sec;                            \
                                                                         \
         /* Add to sleeping_set */                                       \
-        add_to_sleeping_set(current_thread);                            \
+        add_to_sleeping_set(sleeping_set,current_thread);                            \
                                                                         \
         /* Yield control to scheduler */                                \
         thread_yield();                                                 \
@@ -234,7 +234,7 @@ extern struct sleeping_set sleeping_set;
         /* If thread is found, wake it up */                        \
         if (thread) {                                               \
             thread->sleeping_time = 0;                              \
-            remove_from_sleeping_set(thread);                       \
+            remove_from_sleeping_set(sleeping_set,thread);                       \
             enqueue(&ready_queue, thread);                         \
         }                                                           \
     })
