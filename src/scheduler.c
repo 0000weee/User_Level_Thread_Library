@@ -129,7 +129,7 @@ void handling_previously_running_threads(int prev_thread_status){
 }
 
 void selecting_the_next_thread() {
-    struct tcb *next_thread = dequeue(ready_queue); // 從 ready_queue 中取出下一個執行緒
+    struct tcb *next_thread = dequeue(&ready_queue); // 從 ready_queue 中取出下一個執行緒
     if (next_thread != NULL) { // ready_queue 有執行緒
         current_thread = next_thread;
         // 7. Context Switching
