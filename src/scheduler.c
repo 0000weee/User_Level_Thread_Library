@@ -51,29 +51,25 @@ void clear_pending_signals() {
 
 struct sleeping_set sleeping_set;
 
-void managing_sleeping_threads(){
+void managing_sleeping_threads(int prev_thread_status){
     for (int i = 0; i < sleeping_set.size; i++) {
-        //sleeping_set.threads[i]->sleeping_time -= time_slice;
+        if(prev_thread_status == JUMP_FROM_SIGNAL_HANDLER){
+            sleeping_set.threads[i]->sleeping_time -= time_slice;
+        }
         if (sleeping_set.threads[i]->sleeping_time <= 0) {
-            //printf("id %d sleep to ready\n",sleeping_set.threads[i]->id);
             enqueue(&ready_queue, sleeping_set.threads[i]);
-            remove_sleeping_set_by_index(sleeping_set, i);// modify
+            remove_sleeping_set_by_index(sleeping_set, i);
             i--;
         }
     }
 }
 
 void handling_waiting_threads(){
-    /*  If the head of the waiting_queue can acquire the resource, 
-        it is moved to the ready_queue. 
-        Repeat this process until no more threads can be moved.
-    */
     while (waiting_queue.size > 0){
         struct tcb* head_of_the_waiting_queue = waiting_queue.arr[waiting_queue.head % THREAD_MAX];
         if (head_of_the_waiting_queue == NULL){
             return;
         }
-        //print_queue();
         switch (head_of_the_waiting_queue->waiting_for){
             case 0: // no resource
                 enqueue(&ready_queue, head_of_the_waiting_queue);
@@ -104,9 +100,9 @@ void handling_previously_running_threads(int prev_thread_status){
     // 根據返回值處理當前執行緒
     switch (prev_thread_status) {
         case JUMP_FROM_SIGNAL_HANDLER:
-            for(int i=0; i<sleeping_set.size; i++){
+            /*for(int i=0; i<sleeping_set.size; i++){
                 sleeping_set.threads[i]->sleeping_time -= time_slice;
-            }
+            }*/
             if (current_thread->id != 0) // 非 idle
                 enqueue(&ready_queue, current_thread);
             break;
@@ -122,7 +118,6 @@ void handling_previously_running_threads(int prev_thread_status){
             free(current_thread);
             break;
     }
-    //print_queue();
 }
 
 void enqueue(struct tcb_queue* queue, struct tcb *thread){
@@ -176,15 +171,19 @@ void scheduler() {
 
     // 1.
     reset_alarm();
-    // 2.      
-    handling_previously_running_threads(jmpVal);
+
+    // 2.
     clear_pending_signals();
+
     // 3.
-    managing_sleeping_threads();
+    managing_sleeping_threads(jmpVal); 
+
     // 4.
     handling_waiting_threads();
+
     // 5.
-    //
+    handling_previously_running_threads(jmpVal);
+    
     // 6.
     selecting_the_next_thread();
 }
