@@ -51,16 +51,25 @@ void clear_pending_signals() {
 
 struct sleeping_set sleeping_set;
 
-void managing_sleeping_threads(){
-    for (int i = 0; i < sleeping_set.size; i++) {
+void managing_sleeping_threads() {
+    int i = 0;
+    while (i < sleeping_set.size) { // 用 while 取代 for-loop
+        printf("3.1\n");
         if (sleeping_set.threads[i]->sleeping_time > 0) {
+            printf("3.2\n");
             sleeping_set.threads[i]->sleeping_time -= time_slice;
             if (sleeping_set.threads[i]->sleeping_time <= 0) {
+                printf("3.3\n");
                 enqueue(&ready_queue, sleeping_set.threads[i]);
+                remove_sleeping_set_by_index(sleeping_set, i);
+                continue; // 不增加 i，處理交換過來的新元素
             }
         }
+        i++; // 若沒有移除，才增加 i
+        printf("3.4\n");
     }
 }
+
 
 void handling_waiting_threads(){
     /*  If the head of the waiting_queue can acquire the resource, 
@@ -68,17 +77,17 @@ void handling_waiting_threads(){
         Repeat this process until no more threads can be moved.
     */
     while (waiting_queue.size > 0){
-        struct tcb* head_of_the_waiting_queue = waiting_queue.arr[waiting_queue.head % THREAD_MAX];
+        struct tcb* head_of_the_waiting_queue = waiting_queue.arr[(waiting_queue.head) % THREAD_MAX];
         if (head_of_the_waiting_queue == NULL){
             return;
         }
-
+        printf("%d\n",head_of_the_waiting_queue->waiting_for);
         switch (head_of_the_waiting_queue->waiting_for){
-            case 0: // no resource
+            /*case 0: // no resource
                 enqueue(&ready_queue, head_of_the_waiting_queue);
                 waiting_queue.head++;
                 waiting_queue.size--;
-                break;
+                break;*/
             case 1: // read lock
                 if (rwlock.write_count == 0){
                     enqueue(&ready_queue, head_of_the_waiting_queue);
@@ -101,40 +110,67 @@ void handling_waiting_threads(){
 
 void handling_previously_running_threads(int prev_thread_status){
     // 根據返回值處理當前執行緒
+    printf("4.1\n");
     switch (prev_thread_status) {
-        case JUMP_FROM_THREAD_YIELD:
+        case JUMP_FROM_SIGNAL_HANDLER:
+            printf("4.2\n");
             if (current_thread->id != 0) // 非 idle
                 enqueue(&ready_queue, current_thread);
             break;
-        case JUMP_FROM_LOCK:                                         
+        case JUMP_FROM_LOCK: 
+            printf("4.3\n");                                        
             enqueue(&waiting_queue, current_thread);
             thread_yield();  
             break;
         case JUMP_FROM_SLEEP:
+            printf("4.4\n");
             // 已處理，不需操作
             break;
         case JUMP_FROM_EXIT:
+            printf("4.5\n");
             free(current_thread->args);
             free(current_thread);
             break;
     }
 }
 
+void enqueue(struct tcb_queue* queue, struct tcb *thread){
+    int idx = (queue->head + queue->size) % THREAD_MAX;
+    queue->arr[idx] = thread;
+    queue->size++;
+}
+
+struct tcb* dequeue(struct tcb_queue* queue){
+    if(queue->size > 0){
+        queue->head++;
+        queue->size--;
+        //printf("q_head-1 %d\n", (queue->head) -1);
+        return queue->arr[((queue->head) -1) % THREAD_MAX];
+    }else{
+        return NULL;
+    }
+}
+
 void selecting_the_next_thread() {
+    //printf("head: %d, size: %d\n", ready_queue.head, ready_queue.size);
     struct tcb *next_thread = dequeue(&ready_queue); // 從 ready_queue 中取出下一個執行緒
     if (next_thread != NULL) { // ready_queue 有執行緒
+
         current_thread = next_thread;
         // 7. Context Switching
+
         siglongjmp(next_thread->env, JUMP_FROM_SCHEDULER);
         
     } else { // ready_queue 為空       
+
         if (sleeping_set.size > 0) {
             // 如果有執行緒在睡眠中，調度 idle 執行緒
-            idle(0, NULL);
+            current_thread = idle_thread;
         } else {
+
             // 沒有任何執行緒，清理 idle 的資源並返回
-            free(current_thread->args);
-            free(current_thread);
+            free(idle_thread->args);
+            free(idle_thread);
             return; // 返回到 start_threading()，進一步返回到 main()
         }
     }
@@ -142,26 +178,27 @@ void selecting_the_next_thread() {
 
 // TODO::
 // Perfectly setting up your scheduler.
-void scheduler() {
+void scheduler() {    
+    // Scheduler Initialization
+    thread_create(idle, 0, NULL);
     int jmpVal = sigsetjmp(sched_buf, 1);
-    if (jmpVal == 0){ 
-        // Scheduler Initialization
-        thread_create(idle, 0, NULL);
-    }
-    else {
-        while (1) {
-            // 1.
-            reset_alarm();
-            // 2.      
-            clear_pending_signals();
-            // 3.
-            managing_sleeping_threads();
-            // 4.
-            handling_waiting_threads();
-            // 5.
-            handling_previously_running_threads(jmpVal);
-            // 6.
-            selecting_the_next_thread();
-        }
-    }
+
+    // 1.
+    reset_alarm();
+    printf("1\n");
+    // 2.      
+    clear_pending_signals();
+    printf("2\n");
+    // 3.
+    managing_sleeping_threads();
+    printf("3\n");
+    // 4.
+    handling_waiting_threads();
+    printf("4\n");
+    // 5.
+    handling_previously_running_threads(jmpVal);
+    printf("5\n");
+    // 6.
+    selecting_the_next_thread();
+    printf("6\n");
 }

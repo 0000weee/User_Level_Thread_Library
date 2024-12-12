@@ -14,6 +14,8 @@
 #define JUMP_FROM_LOCK 4
 #define JUMP_FROM_SLEEP 5
 #define JUMP_FROM_EXIT 6
+
+
 void sighandler(int signum);
 void scheduler();
 
@@ -28,7 +30,7 @@ struct tcb {
     int waiting_for;
     int sleeping_time;
     jmp_buf env;  // Where the scheduler should jump to.
-    int n, i, f_cur, f_prev, sum; // TODO: Add some variables you wish to keep between switches.
+    int n, i, f_cur, f_prev, sum, q_p , q_s, p_p, p_s, d_p, d_s; // TODO: Add some variables you wish to keep between switches.
 };
 
 // The only one thread in the RUNNING state.
@@ -63,7 +65,9 @@ extern int time_slice;
 // The long jump buffer for the scheduler.
 extern jmp_buf sched_buf;
 
-#define enqueue(queue, thread)                      \
+void enqueue(struct tcb_queue* queue, struct tcb *thread);
+struct tcb* dequeue(struct tcb_queue* queue);
+/*#define enqueue(queue, thread)                      \
     do {                                            \
         int idx = ((queue)->head + (queue)->size) % THREAD_MAX; \
         (queue)->arr[idx] = (thread);               \
@@ -71,7 +75,7 @@ extern jmp_buf sched_buf;
     } while (0)
 
 #define dequeue(queue) \
-    ((queue)->head++, (queue)->size--, (queue)->arr[(queue)->head - 1])
+    ((queue)->head++, (queue)->size--, (queue)->arr[(queue)->head - 1])*/
 
 
 // TODO::
@@ -83,6 +87,7 @@ extern jmp_buf sched_buf;
 
 #define thread_setup(t_id, t_args)                                          \
     ({                                                                      \
+        printf("thread %d: set up routine %s\n", t_id, __func__);         \
         struct tcb* new_tcb = (struct tcb*) calloc(1, sizeof(struct tcb));  \
         new_tcb->id = t_id;                                                 \
         new_tcb->args = t_args;                                             \
@@ -101,7 +106,7 @@ extern jmp_buf sched_buf;
 
 #define thread_yield()                                              \
     ({                                                              \
-        int jmpVal = sigsetjmp(current_thread->env, 1);             \
+        sigsetjmp(current_thread->env, 1);                          \
         sigset_t sigset;                                            \
         sigset_t oldset;                                            \
                                                                     \
@@ -125,9 +130,6 @@ extern jmp_buf sched_buf;
         sigprocmask(SIG_BLOCK, &sigset, NULL);                      \
                                                                     \
         /*Relinquishes control to the scheduler*/                   \
-        if (jmpVal == 0){                                           \
-            siglongjmp(sched_buf, JUMP_FROM_THREAD_YIELD);          \
-        }                                                           \
     })
 
 
@@ -136,9 +138,11 @@ extern jmp_buf sched_buf;
         sigsetjmp(current_thread->env, 1);                                \
         while(1){                                                   \
             if (rwlock.write_count > 0){                            \
+                current_thread->waiting_for = 1;                    \
                 siglongjmp(sched_buf, JUMP_FROM_LOCK);                  \
             }                                                       \
             else{                                                   \
+                current_thread->waiting_for = 0;                    \
                 rwlock.read_count += 1;                             \
                 break;                                              \
             }                                                       \
@@ -150,9 +154,11 @@ extern jmp_buf sched_buf;
         sigsetjmp(current_thread->env, 1);                                \
         while(1){                                                   \
             if (rwlock.write_count > 0 || rwlock.read_count > 0){   \
+                current_thread->waiting_for = 2;                    \
                 siglongjmp(sched_buf, JUMP_FROM_LOCK);                 \
             }                                                       \
             else{                                                   \
+                current_thread->waiting_for = 0;                    \
                 rwlock.write_count += 1;                            \
                 break;                                              \
             }                                                       \
@@ -196,6 +202,14 @@ extern struct sleeping_set sleeping_set;
         }                                                                  \
     } while (0)
 
+#define remove_sleeping_set_by_index(sleeping_set, i)         \
+    do {                                                 \
+        if ((i) >= 0 && (i) < (sleeping_set).size) {     \
+            (sleeping_set).threads[i] =                 \
+                (sleeping_set).threads[--(sleeping_set).size]; \
+            (sleeping_set).threads[(sleeping_set).size] = NULL; \
+        }                                                \
+    } while (0)
 
 
 #define thread_sleep(sec)                                           \
@@ -240,10 +254,10 @@ extern struct sleeping_set sleeping_set;
 
 #define thread_exit()                                               \
     ({                                                              \
-        printf("thread [%d]: exit\n", current_thread->id);          \
+        printf("thread %d: exit\n", current_thread->id);          \
                                                                     \
         /* Jump to scheduler using longjmp */                       \
-        siglongjmp(sched_buf, 1);                                   \
+        siglongjmp(sched_buf, JUMP_FROM_EXIT);                                   \
     })
 
 

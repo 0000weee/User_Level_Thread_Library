@@ -10,7 +10,7 @@
 
 struct tcb *current_thread, *idle_thread;
 struct tcb_queue ready_queue, waiting_queue;
-struct tcb *sleeping_set[THREAD_MAX];
+//struct tcb *sleeping_set[THREAD_MAX];
 struct rwlock rwlock;
 int q_p, q_s;
 int time_slice;
