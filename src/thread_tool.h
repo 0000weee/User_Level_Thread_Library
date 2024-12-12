@@ -245,8 +245,6 @@ void print_queue();
         /* If thread is found, wake it up */                        \
         if (thread) {                                               \
             thread->sleeping_time = 0;                              \
-            remove_from_sleeping_set(sleeping_set,thread);                       \
-            enqueue(&ready_queue, thread);                         \
         }                                                           \
     })
 

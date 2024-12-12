@@ -51,14 +51,12 @@ void clear_pending_signals() {
 
 struct sleeping_set sleeping_set;
 
-void managing_sleeping_threads(int prev_thread_status){
-    for (int i = 0; i < sleeping_set.size; i++) {
-        if(prev_thread_status == JUMP_FROM_SIGNAL_HANDLER){
-            sleeping_set.threads[i]->sleeping_time -= time_slice;
-        }
+void managing_sleeping_threads(){
+    for (int i = 0; i < sleeping_set.size; i++){
+        sleeping_set.threads[i]->sleeping_time -= time_slice;
         if (sleeping_set.threads[i]->sleeping_time <= 0) {
             enqueue(&ready_queue, sleeping_set.threads[i]);
-            remove_sleeping_set_by_index(sleeping_set, i);
+            remove_from_sleeping_set(sleeping_set, sleeping_set.threads[i]);
             i--;
         }
     }
@@ -100,11 +98,9 @@ void handling_previously_running_threads(int prev_thread_status){
     // 根據返回值處理當前執行緒
     switch (prev_thread_status) {
         case JUMP_FROM_SIGNAL_HANDLER:
-            /*for(int i=0; i<sleeping_set.size; i++){
-                sleeping_set.threads[i]->sleeping_time -= time_slice;
-            }*/
-            if (current_thread->id != 0) // 非 idle
+            if (current_thread->id != 0){ // 非 idle
                 enqueue(&ready_queue, current_thread);
+            }                 
             break;
         case JUMP_FROM_LOCK:                                         
             enqueue(&waiting_queue, current_thread);
@@ -150,7 +146,6 @@ void selecting_the_next_thread() {
             // 如果有執行緒在睡眠中，調度 idle 執行緒
             current_thread = idle_thread;
         } else {
-
             // 沒有任何執行緒，清理 idle 的資源並返回
             free(idle_thread->args);
             free(idle_thread);
@@ -158,7 +153,7 @@ void selecting_the_next_thread() {
         }
     }
     // 7. Context Switching
-    printf("current_thread->id: %d\n", current_thread->id);
+    //printf("current_thread->id: %d\n", current_thread->id);
     siglongjmp(current_thread->env, JUMP_FROM_SCHEDULER);
 }
 
@@ -176,7 +171,9 @@ void scheduler() {
     clear_pending_signals();
 
     // 3.
-    managing_sleeping_threads(jmpVal); 
+    if(jmpVal == JUMP_FROM_SIGNAL_HANDLER){
+        managing_sleeping_threads(); 
+    }
 
     // 4.
     handling_waiting_threads();
