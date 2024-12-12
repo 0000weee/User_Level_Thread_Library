@@ -30,7 +30,7 @@ struct tcb {
     int waiting_for;
     int sleeping_time;
     jmp_buf env;  // Where the scheduler should jump to.
-    int n, i, f_cur, f_prev, sum, q_p , q_s, p_p, p_s, d_p, d_s; // TODO: Add some variables you wish to keep between switches.
+    int n, i, f_cur, f_prev, sum, q_p , q_s, p_p, p_s, d_p, d_s,s,b; // TODO: Add some variables you wish to keep between switches.
 };
 
 // The only one thread in the RUNNING state.
@@ -181,6 +181,7 @@ struct sleeping_set {
 };
 
 extern struct sleeping_set sleeping_set;
+void print_queue();
 
 #define add_to_sleeping_set(sleeping_set, thread)                          \
     do {                                                                   \
@@ -214,11 +215,6 @@ extern struct sleeping_set sleeping_set;
 
 #define thread_sleep(sec)                                           \
     ({                                                                  \
-        if (sec < 1 || sec > 10) {                                      \
-            printf("Invalid sleep time: %d\n", sec);                    \
-            return;                                                     \
-        }                                                               \
-                                                                        \
         /* Convert sleep seconds to simulated time slices */            \
         current_thread->sleeping_time = sec;                            \
                                                                         \
@@ -226,7 +222,10 @@ extern struct sleeping_set sleeping_set;
         add_to_sleeping_set(sleeping_set,current_thread);                            \
                                                                         \
         /* Yield control to scheduler */                                \
-        thread_yield();                                                 \
+        int jmpVal = sigsetjmp(current_thread->env, 1);\
+        if(jmpVal == 0){\
+            siglongjmp(sched_buf, JUMP_FROM_SLEEP);\
+        }\
     })
 
 

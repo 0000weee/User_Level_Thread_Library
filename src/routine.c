@@ -10,8 +10,9 @@ void idle(int id, int *args) {
     // TODO:: IDLE ^-^
     //printf("423\n");
     thread_setup(id, args);
+    
     while (1) {
-        printf("thread [%d]: idle\n", current_thread->id);
+        printf("thread %d: idle\n", current_thread->id);
         sleep(1);
         thread_yield();
     }
@@ -86,13 +87,17 @@ void enroll(int id, int *args) {
     current_thread->d_s = d_s;
     int s = current_thread->args[2];    // Sleep time
     int b = current_thread->args[3];    // Best friend's ID
+    current_thread->s = s;
+    current_thread->b = b;
 
     // Step 1: 模擬 oversleeping
-    printf("thread %d: sleep %d\n", current_thread->id, s);
-    thread_sleep(s);
+    printf("thread %d: sleep %d\n", current_thread->id, current_thread->s);
+    thread_sleep(current_thread->s);
 
     // Step 2: 喚醒好友並讀取課程剩餘名額
-    thread_awake(b);
+    //printf("%d\n", b);
+    
+    thread_awake(current_thread->b);
     read_lock();
     printf("thread %d: acquire read lock\n", current_thread->id);
 
@@ -106,11 +111,11 @@ void enroll(int id, int *args) {
     // Step 3: 釋放讀鎖並計算優先值
     read_unlock();
 
-    int p_p = d_p * current_thread->q_p;  // Priority for pj_class
-    int p_s = d_s * current_thread->q_s;  // Priority for sw_class
+    int p_p = current_thread->d_p * current_thread->q_p;  // Priority for pj_class
+    int p_s = current_thread->d_s * current_thread->q_s;  // Priority for sw_class
     current_thread->p_p = p_p;
     current_thread->p_s = p_s;
-    printf("thread %d: release read lock, p_p = %d, p_s = %d\n", current_thread->id, p_p, p_s);
+    printf("thread %d: release read lock, p_p = %d, p_s = %d\n", current_thread->id, current_thread->p_p, current_thread->p_s);
 
     sleep(1);
     thread_yield();
