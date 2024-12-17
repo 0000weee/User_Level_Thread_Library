@@ -136,33 +136,28 @@ struct tcb* dequeue(struct tcb_queue* queue);
 #define read_lock()                                                 \
     ({                                                              \
         sigsetjmp(current_thread->env, 1);                          \
-        while(1){                                                   \
-            if (rwlock.write_count > 0){                            \
-                current_thread->waiting_for = 1;                    \
-                siglongjmp(sched_buf, JUMP_FROM_LOCK);              \
-            }                                                       \
-            else{                                                   \
-                rwlock.read_count += 1;                             \
-                current_thread->waiting_for = 0;                    \
-                break;                                              \
-            }                                                       \
-        }                                                           \
+        if (rwlock.write_count > 0){                            \
+            current_thread->waiting_for = 1;                    \
+            siglongjmp(sched_buf, JUMP_FROM_LOCK);              \
+        }                                                       \
+        else{                                                   \
+            rwlock.read_count += 1;                             \
+            current_thread->waiting_for = 0;                    \
+        }                                                       \
     })                                                              
 
 #define write_lock()                                                \
     ({                                                              \
         sigsetjmp(current_thread->env, 1);                          \
-        while(1){                                                   \
-            if (rwlock.write_count > 0 || rwlock.read_count > 0){   \
-                current_thread->waiting_for = 2;                    \
-                siglongjmp(sched_buf, JUMP_FROM_LOCK);              \
-            }                                                       \
-            else{                                                   \
-                rwlock.write_count += 1;                            \
-                current_thread->waiting_for = 0;                    \
-                break;                                              \
-            }                                                       \
-        }                                                           \
+        \
+        if (rwlock.write_count > 0 || rwlock.read_count > 0){   \
+            current_thread->waiting_for = 2;                    \
+            siglongjmp(sched_buf, JUMP_FROM_LOCK);              \
+        }                                                       \
+        else{                                                   \
+            rwlock.write_count += 1;                            \
+            current_thread->waiting_for = 0;                    \
+        }                                                       \
     })
 
 #define read_unlock()                                               \

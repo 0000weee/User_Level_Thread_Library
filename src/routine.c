@@ -81,14 +81,12 @@ void enroll(int id, int *args) {
     // Step 1: 初始化執行緒，並獲取參數
     thread_setup(id, args);
 
-    int d_p = current_thread->args[0];  // Desire for pj_class
-    int d_s = current_thread->args[1];  // Desire for sw_class
-    current_thread->d_p = d_p;
-    current_thread->d_s = d_s;
-    int s = current_thread->args[2];    // Sleep time
-    int b = current_thread->args[3];    // Best friend's ID
-    current_thread->s = s;
-    current_thread->b = b;
+    current_thread->d_p = current_thread->args[0];  // Desire for pj_class
+    current_thread->d_s = current_thread->args[1];  // Desire for sw_class
+
+    current_thread->s = current_thread->args[2];    // Sleep time
+    current_thread->b = current_thread->args[3];    // Best friend's ID
+
 
     // Step 1: 模擬 oversleeping
     printf("thread %d: sleep %d\n", current_thread->id, current_thread->s);
@@ -96,7 +94,6 @@ void enroll(int id, int *args) {
 
     // Step 2: 喚醒好友並讀取課程剩餘名額
     //printf("%d\n", b);
-    
     thread_awake(current_thread->b);
     read_lock();
     printf("thread %d: acquire read lock\n", current_thread->id);
@@ -122,7 +119,7 @@ void enroll(int id, int *args) {
 
     // Step 4: 獲取寫鎖並嘗試報名
     write_lock();
-
+    
     const char *enroll_class = NULL;  // 要報名的課程名稱
     if (current_thread->p_p > current_thread->p_s || (current_thread->p_p == current_thread->p_s && current_thread->d_p > current_thread->d_s)) {
         // 優先報名 pj_class

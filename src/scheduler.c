@@ -56,7 +56,7 @@ void managing_sleeping_threads(){
         sleeping_set.threads[i]->sleeping_time -= time_slice;
         if (sleeping_set.threads[i]->sleeping_time <= 0) {
             enqueue(&ready_queue, sleeping_set.threads[i]);
-            remove_from_sleeping_set(sleeping_set, sleeping_set.threads[i]);
+            remove_sleeping_set_by_index(sleeping_set, i);
             i--;
         }
     }
@@ -79,6 +79,8 @@ void handling_waiting_threads(){
                     enqueue(&ready_queue, head_of_the_waiting_queue);
                     waiting_queue.head++;
                     waiting_queue.size--;
+                }else{
+                    return;
                 }
                 break;
             case 2: // write lock
@@ -86,6 +88,8 @@ void handling_waiting_threads(){
                     enqueue(&ready_queue, head_of_the_waiting_queue);
                     waiting_queue.head++;
                     waiting_queue.size--;
+                }else{
+                    return;
                 }
                 break;
             default:
@@ -95,6 +99,7 @@ void handling_waiting_threads(){
 }
 
 void handling_previously_running_threads(int prev_thread_status){
+    //printf("handling_previously_running_threads\n");
     // 根據返回值處理當前執行緒
     switch (prev_thread_status) {
         case JUMP_FROM_SIGNAL_HANDLER:
@@ -103,8 +108,7 @@ void handling_previously_running_threads(int prev_thread_status){
             }                 
             break;
         case JUMP_FROM_LOCK:                                         
-            enqueue(&waiting_queue, current_thread);
-            thread_yield();  
+            enqueue(&waiting_queue, current_thread); 
             break;
         case JUMP_FROM_SLEEP:
             // 已處理，不需操作
@@ -134,10 +138,10 @@ struct tcb* dequeue(struct tcb_queue* queue){
 }
 
 void selecting_the_next_thread() {
-    //printf("head: %d, size: %d\n", ready_queue.head, ready_queue.size);
+    //printf("selecting_the_next_thread\n");
+    //print_queue();
     struct tcb *next_thread = dequeue(&ready_queue); // 從 ready_queue 中取出下一個執行緒
     if (next_thread != NULL) { // ready_queue 有執行緒
-
         current_thread = next_thread;
         
     } else { // ready_queue 為空       
@@ -152,8 +156,8 @@ void selecting_the_next_thread() {
             return; // 返回到 start_threading()，進一步返回到 main()
         }
     }
-    // 7. Context Switching
-    //printf("current_thread->id: %d\n", current_thread->id);
+    //printf("--id %d\n", current_thread->id);
+    // 7. Context Switch
     siglongjmp(current_thread->env, JUMP_FROM_SCHEDULER);
 }
 
@@ -169,20 +173,21 @@ void scheduler() {
 
     // 2.
     clear_pending_signals();
-
+    //printf("2.\n");
     // 3.
     if(jmpVal == JUMP_FROM_SIGNAL_HANDLER){
         managing_sleeping_threads(); 
     }
-
+    //printf("3.\n");
     // 4.
     handling_waiting_threads();
-
+    //printf("4.\n");
     // 5.
     handling_previously_running_threads(jmpVal);
-    
+    //printf("5.\n");
     // 6.
     selecting_the_next_thread();
+    //printf("6.\n");
 }
 
 
