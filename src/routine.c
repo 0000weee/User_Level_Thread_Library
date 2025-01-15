@@ -98,18 +98,14 @@ void enroll(int id, int *args) {
     read_lock();
     printf("thread %d: acquire read lock\n", current_thread->id);
 
-
-    current_thread->q_p = q_p;
-    current_thread->q_s = q_s;
-
     sleep(1);
     thread_yield();
 
     // Step 3: 釋放讀鎖並計算優先值
     read_unlock();
 
-    int p_p = current_thread->d_p * current_thread->q_p;  // Priority for pj_class
-    int p_s = current_thread->d_s * current_thread->q_s;  // Priority for sw_class
+    int p_p = current_thread->d_p * q_p;  // Priority for pj_class
+    int p_s = current_thread->d_s * q_s;  // Priority for sw_class
     current_thread->p_p = p_p;
     current_thread->p_s = p_s;
     printf("thread %d: release read lock, p_p = %d, p_s = %d\n", current_thread->id, current_thread->p_p, current_thread->p_s);
@@ -119,24 +115,24 @@ void enroll(int id, int *args) {
 
     // Step 4: 獲取寫鎖並嘗試報名
     write_lock();
-    
+
     const char *enroll_class = NULL;  // 要報名的課程名稱
     if (current_thread->p_p > current_thread->p_s || (current_thread->p_p == current_thread->p_s && current_thread->d_p > current_thread->d_s)) {
         // 優先報名 pj_class
-        if (current_thread->q_p > 0) {
-            current_thread->q_p--;  // 減少剩餘名額
+        if (q_p > 0) {
+            q_p--;  // 減少剩餘名額
             enroll_class = "pj_class";
-        } else if (current_thread->q_s > 0) {
-            current_thread->q_s--;
+        } else if (q_s > 0) {
+            q_s--;
             enroll_class = "sw_class";
         }
     } else {
         // 優先報名 sw_class
-        if (current_thread->q_s > 0) {
-            current_thread->q_s--;  // 減少剩餘名額
+        if (q_s > 0) {
+            q_s--;  // 減少剩餘名額
             enroll_class = "sw_class";
-        } else if (current_thread->q_p > 0) {
-            current_thread->q_p--;
+        } else if (q_p > 0) {
+            q_p--;
             enroll_class = "pj_class";
         }
     }

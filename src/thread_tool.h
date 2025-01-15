@@ -30,7 +30,7 @@ struct tcb {
     int waiting_for;
     int sleeping_time;
     jmp_buf env;  // Where the scheduler should jump to.
-    int n, i, f_cur, f_prev, sum, q_p , q_s, p_p, p_s, d_p, d_s,s,b; // TODO: Add some variables you wish to keep between switches.
+    int n, i, f_cur, f_prev, sum, p_p, p_s, d_p, d_s,s,b; // TODO: Add some variables you wish to keep between switches.
 };
 
 // The only one thread in the RUNNING state.

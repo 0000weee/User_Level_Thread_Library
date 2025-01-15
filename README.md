@@ -3,7 +3,6 @@
 
 Please refer to the [assignment description](https://hackmd.io/@seantsao00/sp2024_hw3) for the details.
 
-
 # TODO
 Implement thread scheduling, including preemption and context switching.
 Manage thread synchronization using read-write locks.
@@ -14,3 +13,8 @@ Handle thread states, including running, ready, waiting, and sleeping.
 Completing the macros for thread lifecycle operations in thread_tool.h.
 Implementing a signal handler and a scheduler in scheduler.c.
 Writing routines that demonstrate thread usage in routine.c.
+
+# Note
+including any header files other than the provided ones is not allowed
+
+ Warning: The default version of main.c and routine.h will be used for judging. Your modifications to these files will be discarded.
